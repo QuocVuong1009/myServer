@@ -2,10 +2,10 @@ from fastapi import FastAPI, HTTPException, File, UploadFile
 from fastapi.responses import FileResponse
 from tempfile import NamedTemporaryFile
 from pathlib import Path
-from magic import Magic
+#from magic import Magic
 from postPicMongo import myPOST, myGET
 
-magic = Magic()
+#magic = Magic()
 app = FastAPI()
 upload_folder = "uploaded_images"
 Path(upload_folder).mkdir(parents=True, exist_ok=True)
