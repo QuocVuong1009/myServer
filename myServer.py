@@ -34,6 +34,10 @@ async def upload_image(file: UploadFile = File(...)):
     # --------------
     return {'presName1' : 'panadol', 'presName2' : 'libacid', 'presName3' : 'Kim tiền thảo'}
 
+
+
+
+
 @app.post("/save-result/")
 async def save_result(file: UploadFile = File(...), ad_name: str = Form(...), result_js: UploadFile = File(...)):
     image = file.file.read()
