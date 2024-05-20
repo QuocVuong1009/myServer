@@ -112,53 +112,6 @@ def myDelete(db, ad_name, number):
         print("Not allow to delete the document which is not exist!!")
         return False
 
-def myUpdate(adName, number, resultJS):
-    uri = "mongodb+srv://vuongmongo:dU8JZCbhGJ9M0un1@vuong-iot.ewsddrs.mongodb.net/{adName}?retryWrites=true&w=majority&appName=Vuong-IoT"
-    client = MongoClient(uri)
-    db = client[adName]
-    try:
-        myCol = "time" + number
-        # collection = db[myCol]
-        document = {
-            "presData" : {}
-        }
-        if resultJS and myCol in db.list_collection_names():
-            resultJS_content = resultJS.file.read()
-            json_data = json.loads(resultJS_content)
-            document["presData"] = json_data
-            filter_condition = {}
-            collection = db[myCol]
-            collection.update_one(filter_condition, {"$set": document})
-            print("Update Sucessfully!!")
-            return True
-        else:
-            return False
-    except Exception as e:
-        print("----------")
-        print("Error!!: ", e)
-        return False
-    
-def myDelete(adName, number):
-    uri = "mongodb+srv://vuongmongo:dU8JZCbhGJ9M0un1@vuong-iot.ewsddrs.mongodb.net/{adName}?retryWrites=true&w=majority&appName=Vuong-IoT"
-    client = MongoClient(uri)
-    db = client[adName]
-    try: 
-        collection_names = db.list_collection_names()
-        cur_col = "time" + number
-        if cur_col in collection_names:
-            count = len(collection_names)
-            db[cur_col].drop()
-            for i in range(int(number) + 1, count + 1):
-                db["time" + str(i)].rename("time" + str(i - 1))
-            print("Delete Sucessfully!!")
-            return True
-        else:
-            print("Illegal!!")
-            return False
-    except Exception as e:
-        print("----------")
-        print("Error!!: ", e)
-        return False
 
 if __name__ == "__main__":
     with open("picture.jpg", "rb") as f:
