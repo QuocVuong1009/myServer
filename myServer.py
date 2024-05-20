@@ -1,33 +1,66 @@
-from fastapi import FastAPI, HTTPException, File, UploadFile
-from fastapi.responses import FileResponse
-from tempfile import NamedTemporaryFile
+from fastapi import FastAPI, File, UploadFile, Form, Response, Path
 from pathlib import Path
-#from magic import Magic
-from postPicMongo import myPOST, myGET
+from postPicMongo import mySave, myGet, myUpdate, myDelete
+from pydantic import BaseModel
+from pymongo.mongo_client import MongoClient
 
-#magic = Magic()
+
+def init():
+    uri = "mongodb+srv://vuongmongo:dU8JZCbhGJ9M0un1@vuong-iot.ewsddrs.mongodb.net/myApp?retryWrites=true&w=majority&appName=Vuong-IoT"
+    client = MongoClient(uri)
+    db = client['myApp']
+    print('Successfull connect db')
+    return db
+
 app = FastAPI()
-upload_folder = "uploaded_images"
-Path(upload_folder).mkdir(parents=True, exist_ok=True)
+db = init()
 
+@app.get("/get-result/")
+async def get_result(response: Response, ad_name: str = Path(), number: int = Path()):
+    my_result = myGet(db, ad_name, number)
+    if (my_result == False):
+        response.status_code = 404
+        return {"status": "fail"}
+    else:
+        print("-------------")
+        print("Get successfully!!!")
+        return my_result
 
 @app.post("/upload-image/")
-async def upload_image(file: UploadFile, urlDatabase: str, adName: str):
+async def upload_image(file: UploadFile = File(...)):
     # Xử lý lưu ảnh và cập nhật tên ảnh mới nhất
     main_image = file.file.read()
-    #Code xử lý ảnh
-    #--------------
-    myPOST(main_image, urlDatabase, adName)
+    # Code xử lý ảnh
+    # --------------
+    return {'presName1' : 'panadol', 'presName2' : 'libacid', 'presName3' : 'Kim tiền thảo'}
 
-
-@app.get("/get-image/")
-async def get_image(urlDatabase: str, adName: str):
-    myImage = myGET(urlDatabase, adName)
-    if (myImage == False):
-        raise HTTPException(status_code=404, detail="There are no picture in this field")
+@app.post("/save-result/")
+async def save_result(file: UploadFile = File(...), ad_name: str = Form(...), result_js: UploadFile = File(...)):
+    image = file.file.read()
+    check = mySave(db, image, ad_name, result_js)
+    if (check):
+        return {"status" : "success"}
     else:
-        with NamedTemporaryFile(delete=False) as temp_file:
-                temp_file.write(myImage)
-                temp_file_path = temp_file.name    
-        # Trả về hình ảnh từ tệp tạm thời
-        return FileResponse(temp_file_path, media_type="image/jpeg")
+        return {"status" : "fail"}
+
+@app.put("/update-result/")
+async def update_result(ad_name: str = Form(...), number: int = Form(...), result_js: UploadFile = File(...)):
+    check = myUpdate(db, ad_name, number, result_js)
+    if (check):
+        return {"status" : "success"}
+    else:
+        return {"status" : "fail"}
+
+@app.delete("/delete-result/")
+async def delete_result(response: Response, ad_name: str = Path(), number: int = Path()):
+    check = myDelete(db, ad_name, number)
+    if (check):
+        return {"status" : "success"}
+    else:
+        return {"status" : "fail"}
+
+
+
+
+
+
