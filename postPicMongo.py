@@ -25,10 +25,9 @@ def mySave(db, image_data, ad_name, result_js):
             "image" : image_base64,
             "presData" : {}
         }
-        # Đọc file json nội dung đơn thuốc để lưu nó vào MongoDB
+        # Đọc nội dung của đơn thuốc là string result_js thành json để lưu nó vào MongoDB
         if result_js:
-            resultJS_content = result_js.file.read()
-            json_data = json.loads(resultJS_content)
+            json_data = json.loads(result_js)
             document["presData"] = json_data
         # Lưu
         collection.insert_one(document)
