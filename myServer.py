@@ -1,6 +1,6 @@
 from fastapi import FastAPI, File, UploadFile, Form, Response, Path
 from pathlib import Path
-from postPicMongo import mySave, myGet, myUpdate, myDelete
+from postPicMongo import mySave, myGet, myUpdate, myDelete, myTotal
 from pydantic import BaseModel
 from pymongo.mongo_client import MongoClient
 
@@ -16,10 +16,9 @@ app = FastAPI()
 db = init()
 
 @app.get("/get-result/")
-async def get_result(response: Response, ad_name: str = Path(), number: int = Path()):
+async def get_result(ad_name: str = Path(), number: int = Path()):
     my_result = myGet(db, ad_name, number)
     if (my_result == False):
-        response.status_code = 404
         return {"status": "fail"}
     else:
         print("-------------")
@@ -52,14 +51,22 @@ async def update_result(ad_name: str = Form(...), number: int = Form(...), resul
         return {"status" : "fail"}
 
 @app.delete("/delete-result/")
-async def delete_result(response: Response, ad_name: str = Path(), number: int = Path()):
+async def delete_result(ad_name: str = Path(), number: int = Path()):
     check = myDelete(db, ad_name, number)
     if (check):
         return {"status" : "success"}
     else:
         return {"status" : "fail"}
 
-
+@app.get("/get-total/")
+async def get_total(ad_name: str = Path()):
+    my_result = myTotal(db, ad_name)
+    if (my_result == False):
+        return {"status": "fail"}
+    else:
+        print("-------------")
+        print("Get total successfully!!!")
+        return my_result
 
 
 

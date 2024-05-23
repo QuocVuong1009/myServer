@@ -1,5 +1,6 @@
 import base64
 import json
+from datetime import datetime
 
 #Hàm để kiểm tra xem trong collection có dữ liệu hay không
 def checkAvailable(db, ad_name, number):
@@ -14,22 +15,28 @@ def mySave(db, image_data, ad_name, result_js):
     try:
         # Chuyển đổi dữ liệu hình ảnh sang base64
         image_base64 = base64.b64encode(image_data).decode('utf-8')
-        # Truy cập vào collection có tên là adname
+        # Truy cập vào collection có tên là ad_name
         collection = db[ad_name]
         # Kiểm tra số lượng document đã có trong collection để thêm vào phần số thứ tự phân biệt
         count = collection.count_documents({}) + 1
-        times = 'time' + str(count)
+        # Lấy thời gian hiện tại
+        now = datetime.now()
+        current_time = now.strftime("%H:%M:%S")
+        current_day = now.strftime("%Y-%m-%d")
         # Tạo một document để lưu số thứ tự, hình ảnh thuốc và nội dung của đơn thuốc đó
         document = {
-            "times" : times,
-            "image" : image_base64,
-            "presData" : {}
+            "order": count,
+            "image": image_base64,
+            "time": current_time,
+            "day": current_day,
+            "presData": {}
+            
         }
-        # Đọc nội dung của đơn thuốc là string result_js thành json để lưu nó vào MongoDB
+        # Chuyển đổi string JSON nội dung đơn thuốc thành dictionary và lưu nó vào MongoDB
         if result_js:
             json_data = json.loads(result_js)
             document["presData"] = json_data
-        # Lưu
+        # Lưu document vào collection
         collection.insert_one(document)
         print("----------")
         print("Save Successfully!")
@@ -45,11 +52,10 @@ def myGet(db, ad_name, number):
         #Tạo ra một object để hứng kết quả trả về
         document = {
         }
-        #Truy cập vào collection và tạo biến times cho giống với quy ước đã lưu
+        #Truy cập vào collection dựa trên ad_name
         collection = db[ad_name]
-        times = 'time' + str(number)
         #Tìm tài liệu dựa trên chỉ số thứ tự đã truyền vào
-        pres_document = collection.find_one({"times": times}, {"_id" : False})
+        pres_document = collection.find_one({"order": number}, {"_id" : False, "order" : False, "time" : False, "day" : False})
         document = pres_document
         return document
     else:
@@ -60,8 +66,6 @@ def myGet(db, ad_name, number):
 def myUpdate(db, ad_name, number, result_js):
     #Kiểm tra xem trong collection có dữ liệu đó hay chưa
     if (checkAvailable(db, ad_name, number)):
-        #tạo biến times để cho khớp với số thứ tự đã quy ước ở trong MongoDB
-        times = "time" + str(number)
         #tạo một object document để hứng dữ liệu mà sẽ được cập nhật và truy cập vào collection dựa trên ad_name
         document = {
             "presData" : {}
@@ -72,8 +76,8 @@ def myUpdate(db, ad_name, number, result_js):
             resultJS_content = result_js.file.read()
             json_data = json.loads(resultJS_content)
             document["presData"] = json_data
-            #Cập nhật dữ liệu ở chỗ có số thứ tự là times + number
-            collection.update_one({"times" : times}, {"$set": document})
+            #Cập nhật dữ liệu ở chỗ có số thứ tự là number
+            collection.update_one({"order" : number}, {"$set": document})
             print("Update Sucessfully!!")
             return True
         else:
@@ -88,22 +92,21 @@ def myDelete(db, ad_name, number):
     if (checkAvailable(db, ad_name, number)):
         #Tạo một document để hứng dữ liệu sẽ cập nhật sau khi xóa
         document = {
-            "times"
+            "order"
         }
-        #Kết nối vào collection và tạo các biến times và count để hỗ trợ việc cập nhật dữ liệu
-        times = "time" + str(number)
+        #Kết nối vào collection dựa vào ad_name
         collection = db[ad_name]
         count = collection.count_documents({})
         #Xóa dữ liệu với chỉ số number
-        collection.delete_one({"times" : times})
+        collection.delete_one({"order" : number})
         #Cập nhật lại số thứ tự sau khi đã xóa
         for i in range (number + 1, count + 1):
-            #Biến old dùng để lưu chỉ số cũ và biến new dùng để lưu chỉ số mới
-            old = "time" + str(i)
-            new = "time" + str(i-1)
-            #Tìm kiếm chỉ số cũ và thay thế nó bằng chỉ số mới
-            document = collection.find_one({"times": old})
-            collection.update_one({"_id": document["_id"]}, {"$set": {"times": new}})
+            #Biến old dùng để lưu số thứ tự cũ và biến new dùng để lưu số thứ tự
+            old = i
+            new = i-1
+            #Tìm kiếm số thứ tự cũ và thay thế nó bằng số thứ tự mới
+            document = collection.find_one({"order": old})
+            collection.update_one({"_id": document["_id"]}, {"$set": {"order": new}})
         print("Delete Sucessfully!!")
         return True
     else:
@@ -111,6 +114,20 @@ def myDelete(db, ad_name, number):
         print("Not allow to delete the document which is not exist!!")
         return False
 
+def myTotal(db, ad_name):
+    collection = db[ad_name]
+    count = collection.count_documents({})
+    if count == 0:
+        print("----------")
+        print("Not allow to get the data of the document which is not exist!!")
+        return False
+    else:
+        documents = []
+        for i in range(1, count + 1):
+            tDocument = collection.find_one({"order": i}, {"_id": 0, "order": 1, "time": 1, "day": 1})
+            if tDocument:
+                documents.append(tDocument)
+        return documents
 
 if __name__ == "__main__":
     with open("picture.jpg", "rb") as f:
