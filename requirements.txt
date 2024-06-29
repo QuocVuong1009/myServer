@@ -1,7 +1,5 @@
 fastapi
 uvicorn[standard]
-
 pymongo
-python-multipart
-
+opencv-python
 ultralytics
