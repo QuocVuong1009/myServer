@@ -289,12 +289,12 @@ def init_extract(Path1, Path2):
     csv_file_path = Path1  # Path 1: "./DrugDatabase/uniqueNone.csv"
     csv_file_path_p = Path2 # Path 1: "./DrugDatabase/unique.csv"
 
-def extract_main(image, model, model_2):    
+def extract_main(image, model, model_2, ad_name):    
     json_string = ""
+    update_json_file_path(ad_name)
     print("File json la: ", json_file_path)
     image = my_main(image)
-    # image = cv2.resize(image, (640, 640))
-    saveTheFile("uploaded_images", image)
+    saveTheFile("uploaded_images", image, ad_name)
     results = model(image, imgsz=640, iou=0.25)
     json_string = read_by_line(results, image, json_string, model_2)
     print("EXTRACTING SUCCESSFULLY!!")

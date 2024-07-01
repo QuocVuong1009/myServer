@@ -50,8 +50,7 @@ async def upload_image(file: UploadFile = File(...), ad_name: str = Form(...)):
     main_image = await file.read()
     image_np = np.frombuffer(main_image, np.uint8)
     main_image = cv2.imdecode(image_np, cv2.IMREAD_COLOR)
-    extract.update_json_file_path(ad_name)
-    result_json = await asyncio.to_thread(extract.extract_main, main_image, model_detect, model_extract)
+    result_json = await asyncio.to_thread(extract.extract_main, main_image, model_detect, model_extract, ad_name)
     if result_json:
         return result_json
     else:

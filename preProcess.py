@@ -98,19 +98,24 @@ def my_main(image):
         else:
             print("PLEASE RECAPTURE!!!")
 
-def saveTheFile(base, pic):
+def saveTheFile(base, pic, ad_name):
     if not os.path.exists(base):
         os.makedirs(base)
-    existing_files = [f for f in os.listdir(base) if os.path.isfile(os.path.join(base, f))]
+    # existing_files = [f for f in os.listdir(base) if os.path.isfile(os.path.join(base, f))]
+    # num_existing_files = len(existing_files)
+    # pic_name = f"pic_{num_existing_files + 1}.jpg"
+    # saved_path = os.path.join(base, pic_name)
+    # cv2.imwrite(saved_path, pic)
+    existing_files = [f for f in os.listdir(base) if os.path.isfile(os.path.join(base, f)) and f.startswith(ad_name)]
     num_existing_files = len(existing_files)
-    pic_name = f"pic_{num_existing_files + 1}.jpg"
+    pic_name = f"{ad_name}{num_existing_files + 1}.jpg"
     saved_path = os.path.join(base, pic_name)
     cv2.imwrite(saved_path, pic)
 
 if __name__ == "__main__":
     image = cv2.imread('anhtestreal/testlc12.jpg')
     my_pic = my_main(image)
-    saveTheFile("API_output", my_pic)
+    saveTheFile("API_output", my_pic, "vuong")
 
 
 
