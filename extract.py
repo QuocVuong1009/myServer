@@ -6,6 +6,7 @@ import os
 import re
 import unicodedata
 from preProcess import my_main, saveTheFile
+import time
 
 def compare_strings(str1, str2, index):
     str1 = str1.lower()
@@ -91,16 +92,16 @@ def convert_pattern(json_file_path):
         print(f"Error: {str(e)}")
         return None
     # Xóa cả hai file sau khi hoàn tất
-    try:
-        if os.path.exists(json_file_path):
-            os.remove(json_file_path)
-        if os.path.exists(converted_json_file_path):
-            os.remove(converted_json_file_path)
-    except Exception as e:
-        print(f"Error while deleting files: {str(e)}")
+    # try:
+    #     if os.path.exists(json_file_path):
+    #         os.remove(json_file_path)
+    #     if os.path.exists(converted_json_file_path):
+    #         os.remove(converted_json_file_path)
+    # except Exception as e:
+    #     print(f"Error while deleting files: {str(e)}")
     return result
 
-def get_matching_rows(input_text, matching_rows, index, count_split, count_text, count_text_2):
+def get_matching_rows(input_text, matching_rows, index, count_split, count_text, count_text_2, json_file_path):
     if input_text != "":
         reader, header = read_csv_file(csv_file_path)
         text_column_index = header.index('TenThuoc')
@@ -223,7 +224,7 @@ def detect_text(results):
         print("Done detect text")
         return text
         
-def read_by_line(results, image, json_string, model_2):
+def read_by_line(results, image, json_string, model_2, json_file_path):
     matching_rows = []
     count_split = 0
     index = 0
@@ -268,20 +269,17 @@ def read_by_line(results, image, json_string, model_2):
                     text = text.replace(")", "")
                     text = text.strip("()")
                     text = text.replace(".", "")
-                    matching_rows, count_split, index, count_text, count_text_2 = get_matching_rows(text, matching_rows, index, count_split, count_text, count_text_2)
+                    matching_rows, count_split, index, count_text, count_text_2 = get_matching_rows(text, matching_rows, index, count_split, count_text, count_text_2, json_file_path)
         center_line.clear()
     json_string = convert_pattern(json_file_path) #Hiệu Suất Vương
     # json_string = convert_and_delete_json(json_file_path) #Hiệu Suất Việt
     return json_string
 
-def create_directory_if_not_exists(directory_path):
-    if not os.path.exists(directory_path):
-        os.makedirs(directory_path)
-
 def update_json_file_path(name):
-    global json_file_path
-    json_file_path = f"./result/{name}.json"
-    create_directory_if_not_exists(os.path.dirname(json_file_path))
+    # global json_file_path
+    json_file_path = f"./result/{name}-{str(time.time())}.json"
+    new = open(json_file_path, 'x')
+    return json_file_path
 
 def init_extract(Path1, Path2):
     global csv_file_path
@@ -291,19 +289,27 @@ def init_extract(Path1, Path2):
 
 def extract_main(image, model, model_2, ad_name):    
     json_string = ""
-    update_json_file_path(ad_name)
+    json_file_path = update_json_file_path(ad_name)
     print("File json la: ", json_file_path)
     image = my_main(image)
     saveTheFile("uploaded_images", image, ad_name)
     results = model(image, imgsz=640, iou=0.25)
-    json_string = read_by_line(results, image, json_string, model_2)
+    json_string = read_by_line(results, image, json_string, model_2, json_file_path)
     print("EXTRACTING SUCCESSFULLY!!")
+    print("adname", ad_name)
+    print("jsonstring", json_string)
     return json_string
 
 if __name__ == "__main__":
     image = cv2.imread("anhtest60.jpg")
     result = extract_main(image)
     print("Cuoi cung ket qua la: ", result)
+
+
+
+
+
+
 
 
 
