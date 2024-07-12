@@ -12,32 +12,36 @@ def checkAvailable(db, ad_name, specific):
 
 def mySave(db, image_data, ad_name, result_js, specific):
     try:
-        # Chuyển đổi dữ liệu hình ảnh sang base64
-        image_base64 = base64.b64encode(image_data).decode('utf-8')
-        # Truy cập vào collection có tên là ad_name
-        collection = db[ad_name]
-        # Lấy thời gian hiện tại
-        now = datetime.now()
-        current_time = now.strftime("%H:%M:%S")
-        current_day = now.strftime("%Y-%m-%d")
-        # Tạo một document để lưu số thứ tự, hình ảnh thuốc và nội dung của đơn thuốc đó
-        document = {
-            "specific": specific,
-            "image": image_base64,
-            "time": current_time,
-            "day": current_day,
-            "presData": {}
-            
-        }
-        # Chuyển đổi string JSON nội dung đơn thuốc thành dictionary và lưu nó vào MongoDB
-        if result_js:
-            json_data = json.loads(result_js)
-            document["presData"] = json_data
-        # Lưu document vào collection
-        collection.insert_one(document)
-        print("----------")
-        print("Save Successfully!")
-        return True
+        if (checkAvailable(db, ad_name, specific)):
+            print("The specific has been used!!!")
+            return False
+        else:
+            # Chuyển đổi dữ liệu hình ảnh sang base64
+            image_base64 = base64.b64encode(image_data).decode('utf-8')
+            # Truy cập vào collection có tên là ad_name
+            collection = db[ad_name]
+            # Lấy thời gian hiện tại
+            now = datetime.now()
+            current_time = now.strftime("%H:%M:%S")
+            current_day = now.strftime("%Y-%m-%d")
+            # Tạo một document để lưu số thứ tự, hình ảnh thuốc và nội dung của đơn thuốc đó
+            document = {
+                "specific": specific,
+                "image": image_base64,
+                "time": current_time,
+                "day": current_day,
+                "presData": {}
+
+            }
+            # Chuyển đổi string JSON nội dung đơn thuốc thành dictionary và lưu nó vào MongoDB
+            if result_js:
+                json_data = json.loads(result_js)
+                document["presData"] = json_data
+            # Lưu document vào collection
+            collection.insert_one(document)
+            print("----------")
+            print("Save Successfully!")
+            return True
     except Exception as e:
         print("----------")
         print("Error!!: ", e)
