@@ -2,16 +2,20 @@ import base64
 import json
 from datetime import datetime
 
+#Hàm kiểm tra xem mục đã tồn tại ở trong MongoDB hay chưa
 def checkAvailable(db, ad_name, specific):
     try:
+        #Đếm số lượng các mục chứa specific và trả về true nếu count > 0
         collection = db[ad_name]
         count = collection.count_documents({"specific": specific})
         return count > 0
     except Exception as e:
         return False
 
+#hàm dùng đê lưu kết quả trích xuất xuống MongoDB
 def mySave(db, image_data, ad_name, result_js, specific):
     try:
+        #Kiểm tra xem specific đã được sử dụng hay chưa
         if (checkAvailable(db, ad_name, specific)):
             print("The specific has been used!!!")
             return False
@@ -31,7 +35,6 @@ def mySave(db, image_data, ad_name, result_js, specific):
                 "time": current_time,
                 "day": current_day,
                 "presData": {}
-
             }
             # Chuyển đổi string JSON nội dung đơn thuốc thành dictionary và lưu nó vào MongoDB
             if result_js:
@@ -47,15 +50,16 @@ def mySave(db, image_data, ad_name, result_js, specific):
         print("Error!!: ", e)
         return False
 
+#hàm dùng để lấy dữ liệu từ MongoDB
 def myGet(db, ad_name, specific):
-    #Kiểm tra xem trong collection có dữ liệu đó hay chưa
+    #Kiểm tra xem mục đó đã được lưu hay chưa
     if (checkAvailable(db, ad_name, specific)):
         #Tạo ra một object để hứng kết quả trả về
         document = {
         }
         #Truy cập vào collection dựa trên ad_name
         collection = db[ad_name]
-        #Tìm tài liệu dựa trên chỉ số thứ tự đã truyền vào
+        #Tìm tài liệu dựa trên specific đã truyền vào
         pres_document = collection.find_one({"specific": specific}, {"_id" : False, "time" : False, "day" : False})
         document = pres_document
         return document
@@ -64,37 +68,43 @@ def myGet(db, ad_name, specific):
         print("Not allow to get data of the document which is not exist!!")
         return False
 
+#Hàm dùng để cập nhật dữ liệu ở trên MongoDB
 def myUpdate(db, ad_name, specific, result_js, specificN):
-    #Kiểm tra xem trong collection có dữ liệu đó hay chưa
+    #Kiểm tra xem mục đó đã được lưu hay chưa
     if (checkAvailable(db, ad_name, specific)):
-        #tạo một object document để hứng dữ liệu mà sẽ được cập nhật và truy cập vào collection dựa trên ad_name
+        #Tạo một object document để hứng dữ liệu mà sẽ được cập nhật và truy cập vào collection dựa trên ad_name
         document = {
             "presData" : {}
         }
         collection = db[ad_name]
-        if result_js:
-            #Load những dữ liệu từ result_js và đưa nó vào document để chuẩn bị cho việc cập nhật dữ liệu
-            # resultJS_content = result_js.file.read()
-            json_data = json.loads(result_js)
-            document["presData"] = json_data
-            #Cập nhật dữ liệu ở chỗ có số thứ tự là number
-            collection.update_one({"specific" : specific}, {"$set": document})
-            if specificN:
+        #Kiểm tra xem thông tin chỉnh sửa có bị trùng hay không
+        if (specificN != specific and checkAvailable(db, ad_name, specificN)):
+            print("The specific has been used!!!")
+            return False
+        else:
+            #Cập nhật tên thuốc nếu có
+            if result_js:
+                #Load những dữ liệu từ result_js và đưa nó vào document để chuẩn bị cho việc cập nhật dữ liệu
+                json_data = json.loads(result_js)
+                document["presData"] = json_data
+                #Cập nhật dữ liệu ở chỗ specific
+                collection.update_one({"specific" : specific}, {"$set": document})
+            #Cập nhật specific nếu có
+            if specificN != specific:
                 temp = {
                     "specific" : specificN
                 }
                 collection.update_one({"specific" : specific}, {"$set" : temp})
             print("Update Sucessfully!!")
             return True
-        else:
-            return False
     else:
         print("----------")
         print("Not allow to update the document which is not exist!!")
         return False
     
+#hàm dùng để xóa dữ liệu đã lưu
 def myDelete(db, ad_name, specific):
-    #Kiểm tra xem trong document có dữ liệu đó hay chưa
+    #Kiểm tra xem mục đó đã được lưu hay chưa
     if (checkAvailable(db, ad_name, specific)):
         #Kết nối vào collection dựa vào ad_name
         collection = db[ad_name]
@@ -107,9 +117,12 @@ def myDelete(db, ad_name, specific):
         print("Not allow to delete the document which is not exist!!")
         return False
 
+#Hàm dùng để lấy thông tin lưu tổng quan
 def myTotal(db, ad_name):
+    #Truy cập vào MongoDB và đếm số lượng mục đã lưu
     collection = db[ad_name]
     count = collection.count_documents({})
+    #Nếu mục đã lưu bằng 0 thì báo lỗi còn ngược lại sẽ in ra các thông tin cần thiết
     if count == 0:
         print("----------")
         print("Not allow to get the data of the document which is not exist!!")
