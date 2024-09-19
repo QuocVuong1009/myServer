@@ -3,3 +3,4 @@ uvicorn[standard]
 pymongo
 opencv-python
 ultralytics
+python-multipart
